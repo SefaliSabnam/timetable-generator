@@ -2,6 +2,8 @@
 
 Free, zero-install prototype. Single file (`index.html`), no backend, no database, no paid service.
 
+Live demo: https://sefalisabnam.github.io/timetable-generator/
+
 ## Run
 Open `index.html` in any browser. Live demo (free): GitHub Pages -> Settings -> Pages -> Deploy from branch `main` / root.
 
