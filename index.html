@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Timetable Generator</title>
+<style>
+:root{--nav:#0f2a47;--bg:#f2f5fa;--card:#fff;--bd:#dde4ee;--fg:#1b2635;--mu:#64748b;--ac:#1d5fd1;--ac2:#e8f0fd;--ok:#157347;--okb:#e7f6ee;--bad:#b42318;--badb:#fdecea;--hd:#f7f9fc}
+@media(prefers-color-scheme:dark){:root{--nav:#0a1a2e;--bg:#0f1620;--card:#172130;--bd:#2a3a4e;--fg:#e5ecf4;--mu:#95a5b8;--ac:#6ea8fe;--ac2:#1b2f4d;--ok:#5fd08d;--okb:#12301f;--bad:#f1948a;--badb:#3a1a18;--hd:#1b2838}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 Inter,"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+header{background:var(--nav);color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+header b{font-size:18px;letter-spacing:.2px}
+header span{color:#b9c8dc;font-size:13px}
+main{max-width:1180px;margin:0 auto;padding:20px 16px 40px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;border-top:3px solid var(--ac)}
+.stat b{display:block;font-size:24px;line-height:1.2}
+.stat span{color:var(--mu);font-size:12.5px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:8px;margin-bottom:16px;overflow:hidden}
+.card>h2{margin:0;padding:12px 16px;font-size:15px;border-bottom:1px solid var(--bd);background:var(--hd)}
+.pad{padding:14px 16px}
+.tabs{display:flex;gap:2px;padding:8px 12px 0;border-bottom:1px solid var(--bd);background:var(--hd);overflow-x:auto}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:9px 14px;color:var(--mu);font:inherit;font-weight:600;cursor:pointer;white-space:nowrap}
+.tab.on{color:var(--ac);border-color:var(--ac)}
+.tab .ct{background:var(--ac2);color:var(--ac);border-radius:10px;padding:0 7px;font-size:12px;margin-left:4px}
+input,select,button,input,select{padding:7px 9px;border:1px solid var(--bd);border-radius:6px;background:var(--card);width:100%}
+label{display:block;font-size:12.5px;color:var(--mu);margin-bottom:3px;font-weight:600}
+.btn{padding:8px 16px;border-radius:6px;border:1px solid var(--ac);background:var(--card);color:var(--ac);font-weight:600;cursor:pointer;width:auto}
+.btn.p{background:var(--ac);color:#fff}
+.btn.x{border-color:var(--bad);color:var(--bad);padding:4px 10px;font-size:12.5px}
+:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
+.hint{color:var(--mu);font-size:13px;margin:0 0 10px}
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+table.f th{background:var(--hd);text-align:left;font-size:12.5px;color:var(--mu);padding:8px}
+table.f td{padding:5px 6px;border-top:1px solid var(--bd)}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:12px 16px;border-top:1px solid var(--bd);background:var(--hd)}
+.msg{margin:0 0 8px;padding:10px 12px;border-radius:6px;background:var(--badb);color:var(--bad);border-left:4px solid var(--bad)}
+.msg.ok{background:var(--okb);color:var(--ok);border-color:var(--ok);font-weight:600}
+.empty{color:var(--mu);padding:6px 0}
+table.t{min-width:680px}
+table.t th,table.t td{border:1px solid var(--bd);padding:8px;text-align:center;vertical-align:top}
+table.t th{background:var(--hd);font-size:13px}
+table.t th small{display:block;color:var(--mu);font-weight:400}
+.sl{border-radius:6px;padding:6px 8px;text-align:left;border-left:4px solid}
+.sl b{display:block}
+.sl small{opacity:.8}
+tr.br td{background:var(--hd);color:var(--mu);font-style:italic;padding:4px}
+@media print{header,.stats,#setup,#rs,.bar,.noprint{display:none!important}body{background:#fff}.card{border:0}}
+</style></head><body>
+<header><b>Timetable Generator</b><span>Conflict-free scheduling for teachers, rooms and divisions</span></header>
+<main>
+<div class="stats" id="stats"></div>
+
+<div class="card" id="setup"><h2>1. Set up your college</h2>
+<div class="tabs" id="tabs" role="tablist"></div>
+<div class="pad" id="form"></div>
+<div class="bar">
+<button class="btn p" id="gen">Generate timetable</button>
+<button class="btn" id="s1">Load working example</button>
+<button class="btn" id="s2">Load impossible example</button>
+<button class="btn" id="clr">Clear all</button>
+</div>
+</div>
+
+<div class="card" id="rs"><h2>2. Result</h2><div class="pad" id="msgs"><div class="empty">Click "Generate timetable" to see results here.</div></div></div>
+
+<div class="card" id="vw" hidden><h2>3. Timetable</h2>
+<div class="bar noprint" style="border-top:0;border-bottom:1px solid var(--bd)">
+<select id="kind" aria-label="View type" style="width:auto"><option value="div">By division</option><option value="fac">By faculty</option><option value="room">By room</option></select>
+<select id="item" aria-label="View item" style="width:auto"></select>
+<span style="flex:1"></span>
+<button class="btn" id="pr">Print</button><button class="btn" id="dl">Download CSV</button></div>
+<div class="pad wrap" id="grid"></div></div>
+</main>
+
+<script>
+const SAMPLE={days:["Mon","Tue","Wed","Thu","Fri"],periods:6,breakAfter:3,start:"09:00",len:50,brk:20,
+rooms:[{id:"R101",type:"classroom",cap:70},{id:"R102",type:"classroom",cap:70},{id:"LAB1",type:"lab",cap:70}],
+divisions:[{id:"CS-A",size:60},{id:"CS-B",size:55}],
+faculty:[{id:"Dr. Rao",off:["Mon-1","Mon-2"]},{id:"Ms. Iyer"},{id:"Mr. Khan"},{id:"Dr. Nair"}],
+requirements:[
+{div:"CS-A",subject:"Maths",faculty:"Dr. Rao",perWeek:4},
+{div:"CS-A",subject:"Physics",faculty:"Ms. Iyer",perWeek:3},
+{div:"CS-A",subject:"Data Structures",faculty:"Mr. Khan",perWeek:4},
+{div:"CS-A",subject:"DBMS",faculty:"Dr. Nair",perWeek:4},
+{div:"CS-A",subject:"DS Lab",faculty:"Mr. Khan",perWeek:2,block:2,roomType:"lab"},
+{div:"CS-B",subject:"Maths",faculty:"Dr. Rao",perWeek:4},
+{div:"CS-B",subject:"Physics",faculty:"Ms. Iyer",perWeek:3},
+{div:"CS-B",subject:"Data Structures",faculty:"Mr. Khan",perWeek:4},
+{div:"CS-B",subject:"DBMS",faculty:"Dr. Nair",perWeek:4},
+{div:"CS-B",subject:"DBMS Lab",faculty:"Dr. Nair",perWeek:2,block:2,roomType:"lab"}]};
+const BAD=JSON.parse(JSON.stringify(SAMPLE));BAD.rooms[2].cap=40;BAD.requirements[0].perWeek=26;
+const $=id=>document.getElementById(id);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let D=clone(SAMPLE),R=null,tab="setup";
+const TABS=[["setup","Week setup"],["rooms","Rooms"],["divisions","Divisions"],["faculty","Faculty"],["requirements","Subjects"]];
+
+/* ---------- Forms ---------- */
+const inp=(l,i,f,v,t)=>`<input data-l="${l}" data-i="${i}" data-f="${f}" data-t="${t||""}" ${t==="n"?'type="number" min="1"':""} value="${esc(v)}" aria-label="${f}">`;
+const sel=(l,i,f,v,o)=>`<select data-l="${l}" data-i="${i}" data-f="${f}" aria-label="${f}">${o.map(x=>`<option${x===v?" selected":""}>${esc(x)}</option>`).join("")}</select>`;
+function table(l,hint,heads,rowFn,add){
+ const rows=D[l].map((x,i)=>`<tr>${rowFn(x,i)}<td><button class="btn x" data-del="${l}|${i}" aria-label="Remove row">Remove</button></td></tr>`).join("");
+ return `<p class="hint">${hint}</p><div class="wrap"><table class="f"><tr>${heads.map(h=>`<th>${h}</th>`).join("")}<th></th></tr>${rows}</table></div>${D[l].length?"":'<div class="empty">Nothing added yet.</div>'}<div style="margin-top:10px"><button class="btn" data-add="${l}">${add}</button></div>`;
+}
+function renderForm(){
+ const divs=D.divisions.map(x=>x.id),facs=D.faculty.map(x=>x.id),cnt=k=>k==="setup"?"":`<span class="ct">${D[k].length}</span>`;
+ $("tabs").innerHTML=TABS.map(([k,n])=>`<button class="tab${k===tab?" on":""}" role="tab" aria-selected="${k===tab}" data-tab="${k}">${n}${cnt(k)}</button>`).join("");
+ const P={
+ setup:`<p class="hint">Define the weekly grid. Time labels are for display only.</p><div class="grid2">
+  <div><label>Days (comma separated)</label><input data-g="days" value="${esc(D.days.join(", "))}"></div>
+  <div><label>Periods per day</label><input data-g="periods" type="number" min="1" value="${D.periods}"></div>
+  <div><label>Break after period</label><input data-g="breakAfter" type="number" min="0" value="${D.breakAfter}"></div>
+  <div><label>First period starts</label><input data-g="start" type="time" value="${esc(D.start)}"></div>
+  <div><label>Period length (min)</label><input data-g="len" type="number" min="10" value="${D.len}"></div>
+  <div><label>Break length (min)</label><input data-g="brk" type="number" min="0" value="${D.brk}"></div></div>`,
+ rooms:table("rooms","Room type decides which subjects can use it. Capacity must be at least the division size.",["Room name","Type","Capacity"],
+  (x,i)=>`<td>${inp("rooms",i,"id",x.id)}</td><td>${sel("rooms",i,"type",x.type,["classroom","lab"])}</td><td>${inp("rooms",i,"cap",x.cap,"n")}</td>`,"+ Add room"),
+ divisions:table("divisions","A division is one class or section that attends lectures together.",["Division name","Students"],
+  (x,i)=>`<td>${inp("divisions",i,"id",x.id)}</td><td>${inp("divisions",i,"size",x.size,"n")}</td>`,"+ Add division"),
+ faculty:table("faculty","Unavailable slots use Day-Period, for example: Mon-1, Tue-3",["Faculty name","Unavailable slots"],
+  (x,i)=>`<td>${inp("faculty",i,"id",x.id)}</td><td>${inp("faculty",i,"off",(x.off||[]).join(", "),"off")}</td>`,"+ Add faculty"),
+ requirements:table("requirements","Block = consecutive periods per session (use 2 for labs). Periods per week must divide evenly by the block.",["Division","Subject","Faculty","Periods / week","Block","Room type"],
+  (x,i)=>`<td>${sel("requirements",i,"div",x.div,divs.includes(x.div)?divs:[x.div,...divs])}</td><td>${inp("requirements",i,"subject",x.subject)}</td><td>${sel("requirements",i,"faculty",x.faculty,facs.includes(x.faculty)?facs:[x.faculty,...facs])}</td><td>${inp("requirements",i,"perWeek",x.perWeek,"n")}</td><td>${inp("requirements",i,"block",x.block||1,"n")}</td><td>${sel("requirements",i,"roomType",x.roomType||"classroom",["classroom","lab"])}</td>`,"+ Add subject")};
+ $("form").innerHTML=P[tab];
+ const tot=D.requirements.reduce((a,r)=>a+(+r.perWeek||0),0);
+ $("stats").innerHTML=[[D.rooms.length,"Rooms"],[D.divisions.length,"Divisions"],[D.faculty.length,"Faculty"],[tot,"Periods to schedule"],[D.days.length*D.periods,"Slots per week"]].map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join("");
+}
+const blank={rooms:()=>({id:"New room",type:"classroom",cap:60}),divisions:()=>({id:"New division",size:60}),faculty:()=>({id:"New faculty",off:[]}),
+ requirements:()=>({div:D.divisions[0]?D.divisions[0].id:"",subject:"New subject",faculty:D.faculty[0]?D.faculty[0].id:"",perWeek:3})};
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b){tab=b.dataset.tab;renderForm()}});
+$("form").addEventListener("change",e=>{
+ const t=e.target;
+ if(t.dataset.g){const g=t.dataset.g;D[g]=g==="days"?t.value.split(",").map(s=>s.trim()).filter(Boolean):g==="start"?t.value:Math.max(0,+t.value||0);renderForm();return}
+ const l=t.dataset.l;if(!l)return;let v=t.value;
+ if(t.dataset.t==="n")v=+v;if(t.dataset.t==="off")v=v.split(",").map(s=>s.trim()).filter(Boolean);
+ D[l][+t.dataset.i][t.dataset.f]=v;renderForm();
+});
+$("form").addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.add){D[b.dataset.add].push(blank[b.dataset.add]());renderForm()}
+ if(b.dataset.del){const[l,i]=b.dataset.del.split("|");D[l].splice(+i,1);renderForm()}
+});
+
+/* ---------- Step 1: pre-checks ---------- */
+function precheck(D){
+ const E=[],slots=D.days.length*D.periods,fl={},dl={},tl={};
+ const fids=D.faculty.map(f=>f.id),dids=D.divisions.map(d=>d.id);
+ if(!D.days.length||D.periods<1)E.push("Set at least one day and one period per day.");
+ if(D.breakAfter>D.periods)E.push("Break cannot be after the last period.");
+ D.requirements.forEach(r=>{
+  const b=r.block||1,t=`${r.div} / ${r.subject}`,type=r.roomType||"classroom";
+  const dv=D.divisions.find(d=>d.id===r.div);
+  if(!dv)E.push(`${t}: division "${r.div}" is not defined.`);
+  if(!fids.includes(r.faculty))E.push(`${t}: faculty "${r.faculty}" is not defined.`);
+  if(r.perWeek%b)E.push(`${t}: ${r.perWeek} periods/week cannot be split into blocks of ${b}.`);
+  if(b>Math.max(D.breakAfter,D.periods-D.breakAfter))E.push(`${t}: a block of ${b} periods does not fit before or after the break.`);
+  if(dv&&!D.rooms.some(x=>x.type===type&&x.cap>=dv.size))E.push(`${t}: no "${type}" room holds ${dv.size} students.`);
+  fl[r.faculty]=(fl[r.faculty]||0)+r.perWeek;dl[r.div]=(dl[r.div]||0)+r.perWeek;tl[type]=(tl[type]||0)+r.perWeek;
+ });
+ D.faculty.forEach(f=>{const a=slots-(f.off||[]).length;if((fl[f.id]||0)>a)E.push(`${f.id}: needs ${fl[f.id]} periods but only ${a} are available per week.`)});
+ dids.forEach(d=>{if((dl[d]||0)>slots)E.push(`${d}: needs ${dl[d]} periods but the week has only ${slots}.`)});
+ Object.keys(tl).forEach(t=>{const n=D.rooms.filter(x=>x.type===t).length;if(tl[t]>n*slots)E.push(`Room type "${t}": ${tl[t]} periods needed, capacity is ${n*slots}.`)});
+ return E;
+}
+
+/* ---------- Step 2: solver ---------- */
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function solve(D){
+ const sz={};D.divisions.forEach(d=>sz[d.id]=d.size);
+ const off=new Set();D.faculty.forEach(f=>(f.off||[]).forEach(o=>off.add(f.id+"@"+o)));
+ const S=[];
+ D.requirements.forEach(r=>{const b=r.block||1;for(let k=0;k<r.perWeek/b;k++)S.push({r,len:b,div:r.div,fac:r.faculty,type:r.roomType||"classroom"})});
+ S.forEach(s=>{
+  s.rooms=D.rooms.filter(x=>x.type===s.type&&x.cap>=sz[s.div]);
+  s.single=(s.r.perWeek/s.len)<=D.days.length;s.all=[];
+  for(let d=0;d<D.days.length;d++)for(let p=0;p+s.len<=D.periods;p++){
+   if(p<D.breakAfter&&p+s.len>D.breakAfter)continue;
+   let ok=true;for(let k=0;k<s.len;k++)if(off.has(s.fac+"@"+D.days[d]+"-"+(p+k+1)))ok=false;
+   if(ok)s.all.push([d,p]);
+  }});
+ S.sort((a,b)=>b.len-a.len||a.all.length*a.rooms.length-b.all.length*b.rooms.length);
+ let best=-1,fail=null;
+ for(let attempt=0;attempt<10;attempt++){
+  const rnd=rng(attempt+1),busy=new Set(),day=new Set(),out=[];let steps=0;
+  S.forEach(s=>{s.c=s.all.slice().sort(()=>rnd()-.5)});
+  const check=(s,d,p)=>{
+   for(let k=0;k<s.len;k++){if(busy.has(`F${s.fac}|${d}|${p+k}`))return["teacher busy"];if(busy.has(`D${s.div}|${d}|${p+k}`))return["division busy"]}
+   if(s.single&&day.has(`${s.div}|${s.r.subject}|${d}`))return["subject already that day"];
+   const room=s.rooms.find(x=>{for(let k=0;k<s.len;k++)if(busy.has(`R${x.id}|${d}|${p+k}`))return false;return true});
+   return room?[null,room]:["no free room"];
+  };
+  const mark=(s,d,p,room,v)=>{for(let k=0;k<s.len;k++)for(const key of[`F${s.fac}|${d}|${p+k}`,`D${s.div}|${d}|${p+k}`,`R${room.id}|${d}|${p+k}`])v?busy.add(key):busy.delete(key);
+   const dk=`${s.div}|${s.r.subject}|${d}`;v?day.add(dk):day.delete(dk)};
+  const rec=i=>{
+   if(i===S.length)return true;
+   if(++steps>60000)return false;
+   const s=S[i];let any=false;
+   for(const[d,p]of s.c){
+    const[why,room]=check(s,d,p);if(why)continue;any=true;
+    mark(s,d,p,room,1);out[i]={s,d,p,room};
+    if(rec(i+1))return true;
+    mark(s,d,p,room,0);
+   }
+   if(!any&&i>=best){best=i;const cnt={};s.c.forEach(([d,p])=>{const w=check(s,d,p)[0];cnt[w]=(cnt[w]||0)+1});
+    cnt["teacher unavailable"]=D.days.length*D.periods-s.all.length;fail={s,cnt}}
+   return false;
+  };
+  if(rec(0))return{ok:true,pl:out.map(o=>({div:o.s.div,subject:o.s.r.subject,fac:o.s.fac,room:o.room.id,day:o.d,start:o.p,len:o.s.len}))};
+ }
+ return{ok:false,fail};
+}
+
+/* ---------- Step 3: independent verifier ---------- */
+function verify(D,pl){
+ const seen={},viol=[],sz={};D.divisions.forEach(d=>sz[d.id]=d.size);
+ const off=new Set();D.faculty.forEach(f=>(f.off||[]).forEach(o=>off.add(f.id+"@"+o)));
+ pl.forEach(x=>{for(let k=0;k<x.len;k++){const p=x.start+k;
+  for(const key of[`F${x.fac}`,`D${x.div}`,`R${x.room}`]){const kk=`${key}|${x.day}|${p}`;if(seen[kk])viol.push(`Clash: ${key.slice(1)} on ${D.days[x.day]} period ${p+1}`);seen[kk]=1}
+  if(off.has(x.fac+"@"+D.days[x.day]+"-"+(p+1)))viol.push(`${x.fac} is unavailable ${D.days[x.day]} period ${p+1}`)}
+  const rm=D.rooms.find(r=>r.id===x.room);if(rm.cap<sz[x.div])viol.push(`Room ${x.room} too small for ${x.div}`)});
+ return viol;
+}
+
+/* ---------- Run and display ---------- */
+function show(m,ok){const e=document.createElement("div");e.className="msg"+(ok?" ok":"");e.textContent=m;$("msgs").appendChild(e)}
+function run(){
+ $("msgs").innerHTML="";$("vw").hidden=true;R=null;
+ if(!D.requirements.length){show("Add at least one subject to schedule.");return}
+ const E=precheck(D);
+ if(E.length){show("Cannot generate. Fix these "+E.length+" problem(s) first:");E.forEach(m=>show(m));return}
+ const r=solve(D);
+ if(!r.ok){show("No timetable found. Hardest session to place: "+r.fail.s.div+" / "+r.fail.s.r.subject+" ("+r.fail.s.fac+"). Slots were rejected because: "+Object.entries(r.fail.cnt).filter(e=>e[1]).map(e=>e[0]+" ("+e[1]+")").join(", ")+". Try adding rooms, reducing periods for this subject, or relaxing teacher restrictions.");return}
+ const v=verify(D,r.pl);
+ if(v.length){show("Internal check failed:");v.forEach(m=>show(m));return}
+ R=r.pl;show("Timetable generated: "+R.length+" sessions placed with 0 conflicts (teacher, room, division, availability, room size, break).",true);
+ $("vw").hidden=false;fill();$("vw").scrollIntoView({behavior:"smooth"});
+}
+function fill(){
+ const k=$("kind").value,ids=k==="div"?D.divisions.map(x=>x.id):k==="fac"?D.faculty.map(x=>x.id):D.rooms.map(x=>x.id);
+ $("item").innerHTML=ids.map(i=>`<option>${esc(i)}</option>`).join("");draw();
+}
+const hue=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))%360;return h};
+const tm=t=>{const[h,m]=(t||"09:00").split(":").map(Number);return h*60+m};
+const fm=n=>String(Math.floor(n/60)%24).padStart(2,"0")+":"+String(n%60).padStart(2,"0");
+function draw(){
+ const k=$("kind").value,id=$("item").value,cell={};
+ R.forEach(x=>{const own=k==="div"?x.div:k==="fac"?x.fac:x.room;if(own!==id)return;
+  const sub=k==="div"?`${x.fac} · ${x.room}`:k==="fac"?`${x.div} · ${x.room}`:`${x.div} · ${x.fac}`,h=hue(x.subject);
+  for(let i=0;i<x.len;i++)cell[x.day+"|"+(x.start+i)]=`<div class="sl" style="background:hsl(${h} 70% 90%);border-color:hsl(${h} 55% 45%);color:hsl(${h} 50% 18%)"><b>${esc(x.subject)}</b><small>${esc(sub)}</small></div>`});
+ let h=`<table class="t"><tr><th>${esc(id)}</th>`+D.days.map(d=>`<th>${esc(d)}</th>`).join("")+"</tr>",t=tm(D.start);
+ for(let p=0;p<D.periods;p++){
+  h+=`<tr><th>Period ${p+1}<small>${fm(t)} – ${fm(t+D.len)}</small></th>`+D.days.map((_,d)=>`<td>${cell[d+"|"+p]||""}</td>`).join("")+"</tr>";
+  t+=D.len;
+  if(p+1===D.breakAfter&&p+1<D.periods){h+=`<tr class="br"><td colspan="${D.days.length+1}">Break · ${D.brk} min</td></tr>`;t+=D.brk}
+ }
+ $("grid").innerHTML=h+"</table>";
+}
+$("gen").onclick=run;
+$("s1").onclick=()=>{D=clone(SAMPLE);renderForm();run()};
+$("s2").onclick=()=>{D=clone(BAD);renderForm();run()};
+$("clr").onclick=()=>{D={days:["Mon","Tue","Wed","Thu","Fri"],periods:6,breakAfter:3,start:"09:00",len:50,brk:20,rooms:[],divisions:[],faculty:[],requirements:[]};R=null;$("vw").hidden=true;$("msgs").innerHTML='<div class="empty">Add details, then generate.</div>';renderForm()};
+$("kind").onchange=fill;$("item").onchange=draw;$("pr").onclick=()=>window.print();
+const ps=p=>tm(D.start)+p*D.len+(D.breakAfter>0&&p>=D.breakAfter?D.brk:0);
+$("dl").onclick=()=>{const rows=[["Division","Subject","Faculty","Room","Day","From","To"]];
+ R.forEach(x=>rows.push([x.div,x.subject,x.fac,x.room,D.days[x.day],fm(ps(x.start)),fm(ps(x.start+x.len-1)+D.len)]));
+ const csv="\ufeff"+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="timetable.csv";a.click()};
+renderForm();
+</script></body></html>
