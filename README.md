@@ -1,4 +1,4 @@
-# Intelligent Timetable Generator (Assignment 3)
+# Intelligent Timetable Generator 
 
 Free, zero-install prototype. Single file (`index.html`), no backend, no database, no paid service.
 
